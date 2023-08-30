@@ -1,25 +1,66 @@
+using Api;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+var services = builder.Services;
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+services
+    .AddDbContext<ApplicationDbContext>((sp, options) =>
+    {
+        options
+            .UseInMemoryDatabase("test");
 
-var app = builder.Build();
+        // options.UseNpgsql(
+        //     applicationSettings.Database.ConnectionString,
+        //     x => x.MigrationsAssembly("Migrations")
+        // );
+    });
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// services
+//     .AddAuthorization()
+//     .AddAuthentication();
 
-app.UseHttpsRedirection();
+services
+    .Configure<IdentityOptions>(options =>
+    {
+        // options.User.RequireUniqueEmail = true;
+        // options.SignIn.RequireConfirmedEmail = false;
+        // options.SignIn.RequireConfirmedAccount = false;
 
-app.UseAuthorization();
+        options.Password.RequireDigit = false;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequiredLength = 1;
+        options.Password.RequireLowercase = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequiredUniqueChars = 1;
+    })
+    .AddIdentity<ApplicationUser, ApplicationRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-app.MapControllers();
+services
+    .AddControllers();
 
-app.Run();
+services
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen();
+
+var application = builder.Build();
+
+application
+    .UseSwagger()
+    .UseSwaggerUI();
+
+application
+    .UseForwardedHeaders()
+    .UseStaticFiles()
+    .UseRouting()
+    .UseAuthentication()
+    .UseAuthorization();
+
+application
+    .MapControllers();
+
+application.Run();
