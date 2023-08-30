@@ -36,12 +36,35 @@ services
         options.Password.RequireUppercase = false;
         options.Password.RequiredUniqueChars = 1;
     })
-    .AddIdentity<ApplicationUser, ApplicationRole>()
+    .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
 services
+    .AddCors(options =>
+    {
+        options
+            .AddDefaultPolicy(
+                policy =>
+                {
+                    policy
+                        .WithOrigins("http://localhost:20020")
+                        .AllowCredentials()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                });
+    });
+
+services
     .AddControllers();
+
+services
+    .ConfigureApplicationCookie(x =>
+    {
+        x.Cookie.SameSite = SameSiteMode.None;
+        x.Cookie.HttpOnly = true;
+        x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    });
 
 services
     .AddEndpointsApiExplorer()
@@ -57,6 +80,7 @@ application
     .UseForwardedHeaders()
     .UseStaticFiles()
     .UseRouting()
+    .UseCors()
     .UseAuthentication()
     .UseAuthorization();
 

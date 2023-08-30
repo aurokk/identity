@@ -5,7 +5,3 @@ namespace Api;
 public sealed class ApplicationUser : IdentityUser
 {
 }
-
-public sealed class ApplicationRole : IdentityRole
-{
-}
