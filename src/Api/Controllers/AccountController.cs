@@ -1,9 +1,13 @@
+using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace Api.Controllers;
 
-public sealed record LoginRequest(string Username, string Password);
+public sealed record CallbackResponse(string LoginResponseId);
+
+public sealed record LoginRequest(string Username, string Password, string LoginRequestId);
 
 [ApiController]
 [Route("account")]
@@ -48,12 +52,43 @@ public class AccountController : ControllerBase
 
         if (!result.Succeeded)
         {
+            // todo: refactor, pass login request id, make it optional
+            using var client = new HttpClient();
+            var responseMessage = await client.PostAsync(
+                requestUri: $"https://localhost:20000/api/private/login/callback/reject",
+                content: new StringContent(
+                    content: JsonConvert.SerializeObject(new
+                    {
+                        LoginRequestId = request.LoginRequestId,
+                    }),
+                    encoding: Encoding.UTF8,
+                    mediaType: "application/json"
+                ),
+                cancellationToken: ct
+            );
             return BadRequest(result.ToString());
         }
 
-        // todo notify ids4 with login_challenge
-
-        return Ok();
+        {
+            // todo: refactor, pass login request id, make it optional
+            using var client = new HttpClient();
+            var responseMessage = await client.PostAsync(
+                requestUri: $"https://localhost:20000/api/private/login/callback/accept",
+                content: new StringContent(
+                    content: JsonConvert.SerializeObject(new
+                    {
+                        LoginRequestId = request.LoginRequestId,
+                        SubjectId = user.Id,
+                    }),
+                    encoding: Encoding.UTF8,
+                    mediaType: "application/json"
+                ),
+                cancellationToken: ct
+            );
+            var rawResponse = await responseMessage.Content.ReadAsStringAsync(ct);
+            var response = JsonConvert.DeserializeObject<CallbackResponse>(rawResponse);
+            return Ok(new { LoginResponseId = response.LoginResponseId, });
+        }
     }
 
     [HttpPost]
