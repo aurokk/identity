@@ -1,4 +1,8 @@
+using System.Security.Claims;
 using System.Text;
+using IdentityModel;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -14,10 +18,14 @@ public sealed record LoginRequest(string Username, string Password, string Login
 public class AccountController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AccountController(SignInManager<ApplicationUser> signInManager)
+    public AccountController(
+        SignInManager<ApplicationUser> signInManager,
+        UserManager<ApplicationUser> userManager)
     {
         _signInManager = signInManager;
+        _userManager = userManager;
     }
 
     [HttpPost]
@@ -91,6 +99,72 @@ public class AccountController : ControllerBase
         }
     }
 
+    [HttpGet]
+    [Route("login/google")]
+    public async Task<IActionResult> LoginGoogle(CancellationToken ct)
+    {
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = "https://localhost:20010/account/login/google/callback",
+            Items =
+            {
+                //     { "returnUrl", "https://localhost:20010/account/login/google/callback" },
+                //     { "scheme", "google" },
+                { "LoginProvider", "Google" }, // used to enable await _signInManager.GetExternalLoginInfoAsync()
+            },
+        };
+
+        return Challenge(props, "Google");
+    }
+
+    [Authorize(AuthenticationSchemes = "Google")]
+    [HttpGet]
+    [Route("login/google/callback")]
+    public async Task<IActionResult> LoginGoogleCallback(CancellationToken ct)
+    {
+        var internalAuthResult = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        if (internalAuthResult.Succeeded != true)
+        {
+            throw new Exception("Internal authentication error");
+        }
+
+        var externalAuthResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        if (externalAuthResult.Succeeded != true)
+        {
+            throw new Exception("External authentication error");
+        }
+
+        var externalUser = externalAuthResult.Principal;
+
+        var userIdClaim =
+            externalUser.FindFirst(JwtClaimTypes.Subject) ??
+            externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+            throw new Exception("Unknown userid");
+
+        var otherClaims = externalUser.Claims.ToList();
+        otherClaims.Remove(userIdClaim);
+
+        var provider = "Google";
+        var providerUserId = userIdClaim.Value;
+        
+        var internalUser = await _userManager.GetUserAsync(internalAuthResult.Principal);
+        if (internalUser == null)
+        {
+            throw new NotImplementedException();
+        }
+
+        var providerUser = await _userManager.FindByLoginAsync(provider, providerUserId);
+        if (providerUser == null)
+        {
+            await _userManager.AddLoginAsync(internalUser, new UserLoginInfo(provider, providerUserId, provider));
+        }
+
+        // delete external cookie
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return Ok();
+    }
+
     [HttpPost]
     [Route("logout")]
     public async Task<IActionResult> Logout(CancellationToken ct)
@@ -109,4 +183,29 @@ public class AccountController : ControllerBase
             IsSignedIn = _signInManager.IsSignedIn(User),
         });
     }
+
+    // private async Task<(ApplicationUser user, string provider, string providerUserId, IEnumerable<Claim> claims)>
+    //     FindUserFromExternalProviderAsync(AuthenticateResult result)
+    // {
+    //     var externalUser = result.Principal;
+    //
+    //     // try to determine the unique id of the external user (issued by the provider)
+    //     // the most common claim type for that are the sub claim and the NameIdentifier
+    //     // depending on the external provider, some other claim type might be used
+    //     var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+    //                       externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+    //                       throw new Exception("Unknown userid");
+    //
+    //     // remove the user id claim so we don't include it as an extra claim if/when we provision the user
+    //     var claims = externalUser.Claims.ToList();
+    //     claims.Remove(userIdClaim);
+    //
+    //     var provider = result.Properties.Items["scheme"];
+    //     var providerUserId = userIdClaim.Value;
+    //
+    //     // find external user
+    //     var user = await _userManager.FindByLoginAsync(provider, providerUserId);
+    //
+    //     return (user, provider, providerUserId, claims);
+    // }
 }

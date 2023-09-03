@@ -1,9 +1,10 @@
+using System.Security.Claims;
 using Api;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
 var services = builder.Services;
 
 services
@@ -18,9 +19,15 @@ services
         // );
     });
 
-// services
-//     .AddAuthorization()
-//     .AddAuthentication();
+services
+    .AddAuthentication()
+    .AddGoogle(options =>
+    {
+        options.ClientId = "441030553740-a59juiaespkn97mm5dmhjgrmapa6m202.apps.googleusercontent.com";
+        options.ClientSecret = "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";
+        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
+        // options.CallbackPath = "/signingoogle";
+    });
 
 services
     .Configure<IdentityOptions>(options =>
@@ -28,7 +35,6 @@ services
         // options.User.RequireUniqueEmail = true;
         // options.SignIn.RequireConfirmedEmail = false;
         // options.SignIn.RequireConfirmedAccount = false;
-
         options.Password.RequireDigit = false;
         options.Password.RequireNonAlphanumeric = false;
         options.Password.RequiredLength = 1;
@@ -42,18 +48,15 @@ services
 
 services
     .AddCors(options =>
-    {
         options
-            .AddDefaultPolicy(
-                policy =>
-                {
-                    policy
-                        .WithOrigins("http://localhost:20020")
-                        .AllowCredentials()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader();
-                });
-    });
+            .AddDefaultPolicy(policy =>
+                policy
+                    .WithOrigins("http://localhost:20020")
+                    .AllowCredentials()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+            )
+    );
 
 services
     .AddControllers();
