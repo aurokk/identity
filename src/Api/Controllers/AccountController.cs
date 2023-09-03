@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Web;
 using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +13,8 @@ namespace Api.Controllers;
 public sealed record CallbackResponse(string LoginResponseId);
 
 public sealed record LoginRequest(string Username, string Password, string LoginRequestId);
+
+public sealed record LoginGoogleRequest(string ReturnUrl, string LoginRequestId);
 
 [ApiController]
 [Route("account")]
@@ -28,6 +31,46 @@ public class AccountController : ControllerBase
         _userManager = userManager;
     }
 
+    private async Task<string> NotifySignInSuccess(string loginRequestId, string subjectId, CancellationToken ct)
+    {
+        // todo: refactor, pass login request id, make it optional
+        using var client = new HttpClient();
+        var responseMessage = await client.PostAsync(
+            requestUri: $"https://localhost:20000/api/private/login/callback/accept",
+            content: new StringContent(
+                content: JsonConvert.SerializeObject(new
+                {
+                    LoginRequestId = loginRequestId,
+                    SubjectId = subjectId,
+                }),
+                encoding: Encoding.UTF8,
+                mediaType: "application/json"
+            ),
+            cancellationToken: ct
+        );
+        var rawResponse = await responseMessage.Content.ReadAsStringAsync(ct);
+        var response = JsonConvert.DeserializeObject<CallbackResponse>(rawResponse);
+        return response.LoginResponseId;
+    }
+
+    private async Task NotifySignInFailure(string loginRequestId, CancellationToken ct)
+    {
+        // todo: refactor, pass login request id, make it optional
+        using var client = new HttpClient();
+        var responseMessage = await client.PostAsync(
+            requestUri: $"https://localhost:20000/api/private/login/callback/reject",
+            content: new StringContent(
+                content: JsonConvert.SerializeObject(new
+                {
+                    LoginRequestId = loginRequestId,
+                }),
+                encoding: Encoding.UTF8,
+                mediaType: "application/json"
+            ),
+            cancellationToken: ct
+        );
+    }
+
     [HttpPost]
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
@@ -36,7 +79,6 @@ public class AccountController : ControllerBase
         if (user == null)
         {
             // todo register a set of users at startup
-
             user = new ApplicationUser
             {
                 Id = Random.Shared.Next(1, 100000).ToString(),
@@ -60,57 +102,28 @@ public class AccountController : ControllerBase
 
         if (!result.Succeeded)
         {
-            // todo: refactor, pass login request id, make it optional
-            using var client = new HttpClient();
-            var responseMessage = await client.PostAsync(
-                requestUri: $"https://localhost:20000/api/private/login/callback/reject",
-                content: new StringContent(
-                    content: JsonConvert.SerializeObject(new
-                    {
-                        LoginRequestId = request.LoginRequestId,
-                    }),
-                    encoding: Encoding.UTF8,
-                    mediaType: "application/json"
-                ),
-                cancellationToken: ct
-            );
+            await NotifySignInFailure(request.LoginRequestId, ct);
             return BadRequest(result.ToString());
         }
 
         {
-            // todo: refactor, pass login request id, make it optional
-            using var client = new HttpClient();
-            var responseMessage = await client.PostAsync(
-                requestUri: $"https://localhost:20000/api/private/login/callback/accept",
-                content: new StringContent(
-                    content: JsonConvert.SerializeObject(new
-                    {
-                        LoginRequestId = request.LoginRequestId,
-                        SubjectId = user.Id,
-                    }),
-                    encoding: Encoding.UTF8,
-                    mediaType: "application/json"
-                ),
-                cancellationToken: ct
-            );
-            var rawResponse = await responseMessage.Content.ReadAsStringAsync(ct);
-            var response = JsonConvert.DeserializeObject<CallbackResponse>(rawResponse);
-            return Ok(new { LoginResponseId = response.LoginResponseId, });
+            var loginResponseId = await NotifySignInSuccess(request.LoginRequestId, user.Id, ct);
+            return Ok(new { LoginResponseId = loginResponseId, });
         }
     }
 
     [HttpGet]
     [Route("login/google")]
-    public async Task<IActionResult> LoginGoogle(CancellationToken ct)
+    public IActionResult LoginGoogle([FromQuery] LoginGoogleRequest request, CancellationToken ct)
     {
         var props = new AuthenticationProperties
         {
             RedirectUri = "https://localhost:20010/account/login/google/callback",
             Items =
             {
-                //     { "returnUrl", "https://localhost:20010/account/login/google/callback" },
-                //     { "scheme", "google" },
+                { "LoginRequestId", request.LoginRequestId },
                 { "LoginProvider", "Google" }, // used to enable await _signInManager.GetExternalLoginInfoAsync()
+                { "ReturnUrl", request.ReturnUrl },
             },
         };
 
@@ -122,11 +135,11 @@ public class AccountController : ControllerBase
     [Route("login/google/callback")]
     public async Task<IActionResult> LoginGoogleCallback(CancellationToken ct)
     {
-        var internalAuthResult = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
-        if (internalAuthResult.Succeeded != true)
-        {
-            throw new Exception("Internal authentication error");
-        }
+        // var internalAuthResult = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        // if (internalAuthResult.Succeeded != true)
+        // {
+        //     throw new Exception("Internal authentication error");
+        // }
 
         var externalAuthResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         if (externalAuthResult.Succeeded != true)
@@ -146,23 +159,50 @@ public class AccountController : ControllerBase
 
         var provider = "Google";
         var providerUserId = userIdClaim.Value;
-        
-        var internalUser = await _userManager.GetUserAsync(internalAuthResult.Principal);
-        if (internalUser == null)
+
+        // var internalUser = await _userManager.GetUserAsync(internalAuthResult.Principal);
+        // if (internalUser == null)
+        // {
+        //     throw new NotImplementedException();
+        // }
+
+        // var providerUser = await _userManager.FindByLoginAsync(provider, providerUserId);
+        // if (providerUser == null)
+        // {
+        //     await _userManager.AddLoginAsync(internalUser, new UserLoginInfo(provider, providerUserId, provider));
+        // }
+
+        var internalUser = new ApplicationUser { UserName = Guid.NewGuid().ToString(), };
+        var internalUserResult = await _userManager.CreateAsync(internalUser);
+        if (!internalUserResult.Succeeded)
         {
-            throw new NotImplementedException();
+            throw new Exception(internalUserResult.Errors.First().Description);
         }
 
-        var providerUser = await _userManager.FindByLoginAsync(provider, providerUserId);
-        if (providerUser == null)
+        var addLoginResult = await _userManager.AddLoginAsync(
+            internalUser,
+            new UserLoginInfo(provider, providerUserId, provider)
+        );
+        if (!addLoginResult.Succeeded)
         {
-            await _userManager.AddLoginAsync(internalUser, new UserLoginInfo(provider, providerUserId, provider));
+            throw new Exception(addLoginResult.Errors.First().Description);
         }
+
+        var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(internalUser);
+        var internalUserLocalSignInProps = new AuthenticationProperties();
+        await HttpContext.SignInAsync(
+            IdentityConstants.ApplicationScheme,
+            internalUserPrincipal,
+            internalUserLocalSignInProps
+        );
 
         // delete external cookie
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        var loginRequestId = externalAuthResult.Properties.Items["LoginRequestId"];
+        var loginResponseId = await NotifySignInSuccess(loginRequestId, internalUser.Id, ct);
 
-        return Ok();
+        var returnUrl = externalAuthResult.Properties.Items["ReturnUrl"] + $"&LoginResponseId={loginResponseId}";
+        return Redirect(returnUrl);
     }
 
     [HttpPost]
@@ -183,29 +223,4 @@ public class AccountController : ControllerBase
             IsSignedIn = _signInManager.IsSignedIn(User),
         });
     }
-
-    // private async Task<(ApplicationUser user, string provider, string providerUserId, IEnumerable<Claim> claims)>
-    //     FindUserFromExternalProviderAsync(AuthenticateResult result)
-    // {
-    //     var externalUser = result.Principal;
-    //
-    //     // try to determine the unique id of the external user (issued by the provider)
-    //     // the most common claim type for that are the sub claim and the NameIdentifier
-    //     // depending on the external provider, some other claim type might be used
-    //     var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
-    //                       externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
-    //                       throw new Exception("Unknown userid");
-    //
-    //     // remove the user id claim so we don't include it as an extra claim if/when we provision the user
-    //     var claims = externalUser.Claims.ToList();
-    //     claims.Remove(userIdClaim);
-    //
-    //     var provider = result.Properties.Items["scheme"];
-    //     var providerUserId = userIdClaim.Value;
-    //
-    //     // find external user
-    //     var user = await _userManager.FindByLoginAsync(provider, providerUserId);
-    //
-    //     return (user, provider, providerUserId, claims);
-    // }
 }
