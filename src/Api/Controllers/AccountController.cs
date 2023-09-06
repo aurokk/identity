@@ -37,38 +37,6 @@ public class AccountController : ControllerBase
         _loginCallbackApi = new LoginCallbackApi("https://localhost:20000"); // TODO
     }
 
-    private async Task<string> NotifySignInSuccess(string loginRequestId, string subjectId, CancellationToken ct)
-    {
-        var request = new ApiApiPrivateLoginCallbackAcceptRequest
-        {
-            LoginRequestId = loginRequestId,
-            SubjectId = subjectId,
-        };
-        var response = await _loginCallbackApi.ApiPrivateLoginCallbackAcceptPostWithHttpInfoAsync(
-            apiApiPrivateLoginCallbackAcceptRequest: request,
-            cancellationToken: ct
-        );
-        return response.StatusCode == HttpStatusCode.OK
-            ? response.Data.LoginResponseId
-            : throw new Exception();
-    }
-
-    private async Task NotifySignInFailure(string loginRequestId, CancellationToken ct)
-    {
-        var request = new ApiApiPrivateLoginCallbackRejectRequest
-        {
-            LoginRequestId = loginRequestId,
-        };
-        var response = await _loginCallbackApi.ApiPrivateLoginCallbackRejectPostWithHttpInfoAsync(
-            apiApiPrivateLoginCallbackRejectRequest: request,
-            cancellationToken: ct
-        );
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            throw new Exception();
-        }
-    }
-
     [HttpPost]
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
@@ -217,5 +185,37 @@ public class AccountController : ControllerBase
         {
             IsSignedIn = _signInManager.IsSignedIn(User),
         });
+    }
+
+    private async Task<string> NotifySignInSuccess(string loginRequestId, string subjectId, CancellationToken ct)
+    {
+        var request = new ApiApiPrivateLoginCallbackAcceptRequest
+        {
+            LoginRequestId = loginRequestId,
+            SubjectId = subjectId,
+        };
+        var response = await _loginCallbackApi.ApiPrivateLoginCallbackAcceptPostWithHttpInfoAsync(
+            apiApiPrivateLoginCallbackAcceptRequest: request,
+            cancellationToken: ct
+        );
+        return response.StatusCode == HttpStatusCode.OK
+            ? response.Data.LoginResponseId
+            : throw new Exception();
+    }
+
+    private async Task NotifySignInFailure(string loginRequestId, CancellationToken ct)
+    {
+        var request = new ApiApiPrivateLoginCallbackRejectRequest
+        {
+            LoginRequestId = loginRequestId,
+        };
+        var response = await _loginCallbackApi.ApiPrivateLoginCallbackRejectPostWithHttpInfoAsync(
+            apiApiPrivateLoginCallbackRejectRequest: request,
+            cancellationToken: ct
+        );
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new Exception();
+        }
     }
 }
