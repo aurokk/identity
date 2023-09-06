@@ -30,11 +30,14 @@ public class AccountController : ControllerBase
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IConfiguration configuration)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-        _loginCallbackApi = new LoginCallbackApi("https://localhost:20000"); // TODO
+
+        var authUrl = configuration.GetValue<string>("AUTH_URL") ?? throw new ApplicationException();
+        _loginCallbackApi = new LoginCallbackApi(authUrl);
     }
 
     [HttpPost]
@@ -79,9 +82,10 @@ public class AccountController : ControllerBase
     [Route("login/google")]
     public IActionResult LoginGoogle([FromQuery] LoginGoogleRequest request, CancellationToken ct)
     {
+        var hostUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
         var props = new AuthenticationProperties
         {
-            RedirectUri = "https://localhost:20010/account/login/google/callback",
+            RedirectUri = $"{hostUrl}/account/login/google/callback",
             Items =
             {
                 { "LoginRequestId", request.LoginRequestId },
