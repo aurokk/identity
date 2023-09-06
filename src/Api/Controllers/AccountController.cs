@@ -1,19 +1,23 @@
+using System.Net;
 using System.Security.Claims;
-using System.Text;
-using System.Web;
+using Auth.Private.Client.Api;
+using Auth.Private.Client.Model;
 using IdentityModel;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 
 namespace Api.Controllers;
 
+[PublicAPI]
 public sealed record CallbackResponse(string LoginResponseId);
 
+[PublicAPI]
 public sealed record LoginRequest(string Username, string Password, string LoginRequestId);
 
+[PublicAPI]
 public sealed record LoginGoogleRequest(string ReturnUrl, string LoginRequestId);
 
 [ApiController]
@@ -22,6 +26,7 @@ public class AccountController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly LoginCallbackApi _loginCallbackApi;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
@@ -29,46 +34,39 @@ public class AccountController : ControllerBase
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _loginCallbackApi = new LoginCallbackApi("https://localhost:20000"); // TODO
     }
 
     private async Task<string> NotifySignInSuccess(string loginRequestId, string subjectId, CancellationToken ct)
     {
-        // todo: refactor, pass login request id, make it optional
-        using var client = new HttpClient();
-        var responseMessage = await client.PostAsync(
-            requestUri: $"https://localhost:20000/api/private/login/callback/accept",
-            content: new StringContent(
-                content: JsonConvert.SerializeObject(new
-                {
-                    LoginRequestId = loginRequestId,
-                    SubjectId = subjectId,
-                }),
-                encoding: Encoding.UTF8,
-                mediaType: "application/json"
-            ),
+        var request = new ApiApiPrivateLoginCallbackAcceptRequest
+        {
+            LoginRequestId = loginRequestId,
+            SubjectId = subjectId,
+        };
+        var response = await _loginCallbackApi.ApiPrivateLoginCallbackAcceptPostWithHttpInfoAsync(
+            apiApiPrivateLoginCallbackAcceptRequest: request,
             cancellationToken: ct
         );
-        var rawResponse = await responseMessage.Content.ReadAsStringAsync(ct);
-        var response = JsonConvert.DeserializeObject<CallbackResponse>(rawResponse);
-        return response.LoginResponseId;
+        return response.StatusCode == HttpStatusCode.OK
+            ? response.Data.LoginResponseId
+            : throw new Exception();
     }
 
     private async Task NotifySignInFailure(string loginRequestId, CancellationToken ct)
     {
-        // todo: refactor, pass login request id, make it optional
-        using var client = new HttpClient();
-        var responseMessage = await client.PostAsync(
-            requestUri: $"https://localhost:20000/api/private/login/callback/reject",
-            content: new StringContent(
-                content: JsonConvert.SerializeObject(new
-                {
-                    LoginRequestId = loginRequestId,
-                }),
-                encoding: Encoding.UTF8,
-                mediaType: "application/json"
-            ),
+        var request = new ApiApiPrivateLoginCallbackRejectRequest
+        {
+            LoginRequestId = loginRequestId,
+        };
+        var response = await _loginCallbackApi.ApiPrivateLoginCallbackRejectPostWithHttpInfoAsync(
+            apiApiPrivateLoginCallbackRejectRequest: request,
             cancellationToken: ct
         );
+        if (response.StatusCode != HttpStatusCode.OK)
+        {
+            throw new Exception();
+        }
     }
 
     [HttpPost]
