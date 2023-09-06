@@ -73,22 +73,19 @@ public class AccountController : ControllerBase
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
     {
-        var user = await _signInManager.UserManager.FindByNameAsync(request.Username);
+        var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null)
         {
-            // todo register a set of users at startup
             user = new ApplicationUser
             {
                 Id = Random.Shared.Next(1, 100000).ToString(),
                 UserName = request.Username,
             };
-            var createResult = await _signInManager.UserManager.CreateAsync(user, request.Password);
+            var createResult = await _userManager.CreateAsync(user, request.Password);
             if (!createResult.Succeeded)
             {
                 return BadRequest(string.Join(" ", createResult.Errors.Select(x => x.Description)));
             }
-
-            // return BadRequest("User not found");
         }
 
         var result = await _signInManager.PasswordSignInAsync(
