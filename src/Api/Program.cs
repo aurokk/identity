@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Api;
-using Api.Controllers;
-using Auth.Private.Client.Api;
+using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

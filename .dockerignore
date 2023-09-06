@@ -1,0 +1,8 @@
+.git
+.idea
+.gitignore
+compose.yml
+Identity.sln.DotSettings.user
+README.md
+**/bin
+**/obj

@@ -1,9 +1,9 @@
 using System.Net;
 using System.Security.Claims;
-using Auth.Private.Client.Api;
-using Auth.Private.Client.Model;
 using IdentityModel;
 using JetBrains.Annotations;
+using Kochnev.Auth.Private.Client.Api;
+using Kochnev.Auth.Private.Client.Model;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,7 +19,6 @@ public sealed record LoginRequest(string Username, string Password, string Login
 
 [PublicAPI]
 public sealed record LoginGoogleRequest(string ReturnUrl, string LoginRequestId);
-
 
 [ApiController]
 [Route("account")]

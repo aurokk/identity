@@ -1,0 +1,8 @@
+services:
+  identity:
+    build: .
+    environment:
+      AUTH_URL: "https://localhost:20000"
+    ports:
+      - "20010:80"
+      
