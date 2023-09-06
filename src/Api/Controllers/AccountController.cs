@@ -20,24 +20,23 @@ public sealed record LoginRequest(string Username, string Password, string Login
 [PublicAPI]
 public sealed record LoginGoogleRequest(string ReturnUrl, string LoginRequestId);
 
+
 [ApiController]
 [Route("account")]
 public class AccountController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly LoginCallbackApi _loginCallbackApi;
+    private readonly ILoginCallbackApi _loginCallbackApi;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
-        IConfiguration configuration)
+        ILoginCallbackApi loginCallbackApi)
     {
         _signInManager = signInManager;
         _userManager = userManager;
-
-        var authUrl = configuration.GetValue<string>("AUTH_URL") ?? throw new ApplicationException();
-        _loginCallbackApi = new LoginCallbackApi(authUrl);
+        _loginCallbackApi = loginCallbackApi;
     }
 
     [HttpPost]

@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Api;
+using Api.Controllers;
+using Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +29,15 @@ services
         options.ClientSecret = "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";
         options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
         // options.CallbackPath = "/signingoogle";
+    });
+
+services
+    .AddHttpClient<ILoginCallbackApi, LoginCallbackApi>((httpClient, sp) =>
+    {
+        var authUrl = sp
+            .GetRequiredService<IConfiguration>()
+            .GetValue<string>("AUTH_URL") ?? throw new ApplicationException();
+        return new LoginCallbackApi(httpClient, authUrl);
     });
 
 services
