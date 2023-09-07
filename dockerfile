@@ -11,6 +11,5 @@ RUN dotnet publish -c release -o /dist --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 COPY --from=build /dist/* /app/
-COPY --from=build /https/* /https/
 WORKDIR /app
 ENTRYPOINT ["dotnet", "Api.dll"]

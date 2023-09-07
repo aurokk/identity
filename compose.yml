@@ -2,10 +2,11 @@ services:
   identity:
     build: .
     environment:
-      AUTH_URL: "https://localhost:20000"
-      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
-      ASPNETCORE_Kestrel__Certificates__Default__Password: dev
+      AUTH_URL: "http://auth:80"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/localhost.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: localhost
       ASPNETCORE_URLS: "https://+"
     ports:
       - "20010:443"
-      
+    volumes:
+      - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
