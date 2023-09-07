@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Api;
 using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,6 +73,12 @@ services
     .AddControllers();
 
 services
+    .AddCookiePolicy(x =>
+    {
+        x.MinimumSameSitePolicy = SameSiteMode.None;
+        x.HttpOnly = HttpOnlyPolicy.Always;
+        x.Secure = CookieSecurePolicy.SameAsRequest;
+    })
     .ConfigureApplicationCookie(x =>
     {
         x.Cookie.SameSite = SameSiteMode.None;
