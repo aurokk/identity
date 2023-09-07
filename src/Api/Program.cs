@@ -76,7 +76,7 @@ services
     {
         x.Cookie.SameSite = SameSiteMode.None;
         x.Cookie.HttpOnly = true;
-        x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        x.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     });
 
 services
