@@ -5,7 +5,7 @@ services:
       AUTH_URL: "https://localhost:20000"
       ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
       ASPNETCORE_Kestrel__Certificates__Default__Password: dev
-      ASPNETCORE_URLS: https://+:443
+      ASPNETCORE_URLS: "https://+"
     ports:
       - "20010:443"
       
