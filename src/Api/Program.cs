@@ -30,7 +30,7 @@ services
         options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
         options.CorrelationCookie.SameSite = SameSiteMode.None;
         options.CorrelationCookie.HttpOnly = true;
-        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
         // options.CallbackPath = "/signingoogle";
     });
 
@@ -80,13 +80,13 @@ services
     {
         x.Cookie.SameSite = SameSiteMode.None;
         x.Cookie.HttpOnly = true;
-        x.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     })
     .ConfigureExternalCookie(x =>
     {
         x.Cookie.SameSite = SameSiteMode.None;
         x.Cookie.HttpOnly = true;
-        x.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     });
 
 services

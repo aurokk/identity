@@ -9,7 +9,10 @@ COPY src/Api/. ./src/Api/
 WORKDIR /source/src/Api
 RUN dotnet publish -c release -o /dist --no-restore
 
+RUN dotnet dev-certs https -ep /https/aspnetapp.pfx -p dev
+
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
+COPY --from=build /dist/* /app/
+COPY --from=build /https/* /https/
 WORKDIR /app
-COPY --from=build /dist ./
 ENTRYPOINT ["dotnet", "Api.dll"]
