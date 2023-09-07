@@ -28,6 +28,9 @@ services
         options.ClientId = "441030553740-a59juiaespkn97mm5dmhjgrmapa6m202.apps.googleusercontent.com";
         options.ClientSecret = "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";
         options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
+        options.CorrelationCookie.SameSite = SameSiteMode.None;
+        options.CorrelationCookie.HttpOnly = true;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         // options.CallbackPath = "/signingoogle";
     });
 
@@ -73,12 +76,6 @@ services
     .AddControllers();
 
 services
-    .AddCookiePolicy(x =>
-    {
-        x.MinimumSameSitePolicy = SameSiteMode.None;
-        x.HttpOnly = HttpOnlyPolicy.Always;
-        x.Secure = CookieSecurePolicy.SameAsRequest;
-    })
     .ConfigureApplicationCookie(x =>
     {
         x.Cookie.SameSite = SameSiteMode.None;
