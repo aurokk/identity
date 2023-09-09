@@ -1,12 +1,49 @@
+version: "3.9"
 services:
+  identity-db:
+    image: postgres
+    restart: no
+    environment:
+      POSTGRES_DB: identity
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: identity
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "20012:5432"
+    volumes:
+      - identity:/var/lib/postgresql/data
+  identity-migrator:
+    build: .
+    depends_on:
+      identity-db:
+        condition: service_healthy
+    restart: no
+    environment:
+      MODE: MIGRATOR
+      Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
+    volumes:
+      - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
   identity:
     build: .
+    depends_on:
+      identity-migrator:
+        condition: service_completed_successfully
+    restart: no
     environment:
-      AUTH_URL: "http://auth:80"
       ASPNETCORE_Kestrel__Certificates__Default__Path: /https/localhost.pfx
       ASPNETCORE_Kestrel__Certificates__Default__Password: localhost
       ASPNETCORE_URLS: "https://+"
+      MODE: WEB
+      Auth__Enabled: false
+      Auth__BaseUrl: "http://auth:80"
+      Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
     ports:
       - "20010:443"
     volumes:
       - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
+volumes:
+  identity:

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Api;
+namespace Identity;
 
 public sealed class ApplicationUser : IdentityUser
 {

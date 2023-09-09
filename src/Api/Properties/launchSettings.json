@@ -8,7 +8,21 @@
       "applicationUrl": "https://localhost:20010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "AUTH_URL": "https://localhost:20000"
+        "MODE": "WEB",
+        "Auth__BaseUrl": "https://localhost:20000",
+        "Database__ConnectionString": "Host=localhost;Port=20012;Username=identity;Password=identity;Database=identity;"
+      }
+    },
+    "Migrator": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": false,
+      "applicationUrl": "https://localhost:20010",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "MODE": "MIGRATOR",
+        "Auth__BaseUrl": "https://localhost:20000",
+        "Database__ConnectionString": "Host=localhost;Port=20012;Username=identity;Password=identity;Database=identity;"
       }
     }
   }

@@ -1,8 +1,7 @@
 using System.Security.Claims;
-using Api;
+using Identity;
 using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,13 +11,9 @@ var services = builder.Services;
 services
     .AddDbContext<ApplicationDbContext>((sp, options) =>
     {
-        options
-            .UseInMemoryDatabase("test");
-
-        // options.UseNpgsql(
-        //     applicationSettings.Database.ConnectionString,
-        //     x => x.MigrationsAssembly("Migrations")
-        // );
+        var configuration = sp.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetValue<string>("Database:ConnectionString");
+        options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Migrations"));
     });
 
 services
@@ -39,7 +34,7 @@ services
     {
         var authUrl = sp
             .GetRequiredService<IConfiguration>()
-            .GetValue<string>("AUTH_URL") ?? throw new ApplicationException();
+            .GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
         return new LoginCallbackApi(httpClient, authUrl);
     });
 
@@ -110,4 +105,29 @@ application
 application
     .MapControllers();
 
-application.Run();
+{
+    var serviceProvider = application.Services;
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var mode = configuration.GetValue<string?>("MODE");
+    switch (mode)
+    {
+        case "MIGRATOR":
+        {
+            using var scope = application.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            await db.Database.MigrateAsync();
+            return;
+        }
+
+        case "WEB":
+        {
+            await application.RunAsync();
+            return;
+        }
+
+        default:
+        {
+            throw new Exception($"Unknown MODE {mode}");
+        }
+    }
+}
