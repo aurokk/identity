@@ -97,16 +97,6 @@ public class AccountController : ControllerBase
         if (user == null)
         {
             return BadRequest();
-            // user = new ApplicationUser
-            // {
-            //     Id = Random.Shared.Next(1, 100000).ToString(),
-            //     UserName = request.Username,
-            // };
-            // var createResult = await _userManager.CreateAsync(user, request.Password);
-            // if (!createResult.Succeeded)
-            // {
-            //     return BadRequest(string.Join(" ", createResult.Errors.Select(x => x.Description)));
-            // }
         }
 
         var result = await _signInManager.PasswordSignInAsync(
