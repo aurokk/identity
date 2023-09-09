@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Identity;
 using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -65,6 +66,13 @@ services
                     .AllowAnyMethod()
                     .AllowAnyHeader()
             )
+    );
+
+services
+    .Configure<ForwardedHeadersOptions>(
+        options => options.ForwardedHeaders =
+            ForwardedHeaders.XForwardedProto |
+            ForwardedHeaders.XForwardedHost
     );
 
 services
