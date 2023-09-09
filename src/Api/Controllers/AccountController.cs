@@ -12,13 +12,26 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [PublicAPI]
-public sealed record CallbackResponse(string LoginResponseId);
+public sealed record CallbackResponse(
+    string LoginResponseId);
 
 [PublicAPI]
-public sealed record LoginRequest(string Username, string Password, string LoginRequestId);
+public sealed record LoginRequest(
+    string Username,
+    string Password,
+    string LoginRequestId);
 
 [PublicAPI]
-public sealed record LoginGoogleRequest(string ReturnUrl, string LoginRequestId);
+public sealed record RegisterRequest(
+    string Username,
+    string Password,
+    string PasswordConfirmation,
+    string LoginRequestId);
+
+[PublicAPI]
+public sealed record LoginGoogleRequest(
+    string ReturnUrl,
+    string LoginRequestId);
 
 [ApiController]
 [Route("account")]
@@ -39,22 +52,61 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost]
+    [Route("register")]
+    public async Task<IActionResult> Register(RegisterRequest request, CancellationToken ct)
+    {
+        if (request.Password != request.PasswordConfirmation)
+        {
+            return BadRequest();
+        }
+
+        var user = new ApplicationUser
+        {
+            Id = Random.Shared.Next(1, 100000).ToString(),
+            UserName = request.Username,
+        };
+        var createResult = await _userManager.CreateAsync(user, request.Password);
+        if (!createResult.Succeeded)
+        {
+            return BadRequest(string.Join(" ", createResult.Errors.Select(x => x.Description)));
+        }
+
+        var result = await _signInManager.PasswordSignInAsync(
+            user: user,
+            password: request.Password,
+            isPersistent: true,
+            lockoutOnFailure: false
+        );
+        if (!result.Succeeded)
+        {
+            await NotifySignInFailure(request.LoginRequestId, ct);
+            return BadRequest(result.ToString());
+        }
+
+        {
+            var loginResponseId = await NotifySignInSuccess(request.LoginRequestId, user.Id, ct);
+            return Ok(new { LoginResponseId = loginResponseId, });
+        }
+    }
+
+    [HttpPost]
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
     {
         var user = await _userManager.FindByNameAsync(request.Username);
         if (user == null)
         {
-            user = new ApplicationUser
-            {
-                Id = Random.Shared.Next(1, 100000).ToString(),
-                UserName = request.Username,
-            };
-            var createResult = await _userManager.CreateAsync(user, request.Password);
-            if (!createResult.Succeeded)
-            {
-                return BadRequest(string.Join(" ", createResult.Errors.Select(x => x.Description)));
-            }
+            return BadRequest();
+            // user = new ApplicationUser
+            // {
+            //     Id = Random.Shared.Next(1, 100000).ToString(),
+            //     UserName = request.Username,
+            // };
+            // var createResult = await _userManager.CreateAsync(user, request.Password);
+            // if (!createResult.Succeeded)
+            // {
+            //     return BadRequest(string.Join(" ", createResult.Errors.Select(x => x.Description)));
+            // }
         }
 
         var result = await _signInManager.PasswordSignInAsync(
