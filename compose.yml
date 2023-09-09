@@ -25,8 +25,6 @@ services:
     environment:
       MODE: MIGRATOR
       Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
-    volumes:
-      - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
   identity:
     build: .
     depends_on:
@@ -38,7 +36,6 @@ services:
       ASPNETCORE_Kestrel__Certificates__Default__Password: localhost
       ASPNETCORE_URLS: "https://+"
       MODE: WEB
-      Auth__Enabled: false
       Auth__BaseUrl: "http://auth:80"
       Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
     ports:
