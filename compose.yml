@@ -1,12 +1,12 @@
 version: "3.9"
 services:
-  identity-db:
+  power-db:
     image: postgres
     restart: no
     environment:
-      POSTGRES_DB: identity
-      POSTGRES_USER: identity
-      POSTGRES_PASSWORD: identity
+      POSTGRES_DB: power
+      POSTGRES_USER: power
+      POSTGRES_PASSWORD: power
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready" ]
       interval: 10s
@@ -15,20 +15,20 @@ services:
     ports:
       - "20012:5432"
     volumes:
-      - identity:/var/lib/postgresql/data
-  identity-migrator:
+      - power:/var/lib/postgresql/data
+  power-migrator:
     build: .
     depends_on:
-      identity-db:
+      power-db:
         condition: service_healthy
     restart: no
     environment:
       MODE: MIGRATOR
-      Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
-  identity:
+      Database__ConnectionString: "Host=power-db;Port=5432;Username=power;Password=power;Database=power;"
+  power:
     build: .
     depends_on:
-      identity-migrator:
+      power-migrator:
         condition: service_completed_successfully
     restart: no
     environment:
@@ -37,10 +37,10 @@ services:
       ASPNETCORE_URLS: "https://+"
       MODE: WEB
       Auth__BaseUrl: "http://auth:80"
-      Database__ConnectionString: "Host=identity-db;Port=5432;Username=identity;Password=identity;Database=identity;"
+      Database__ConnectionString: "Host=power-db;Port=5432;Username=power;Password=power;Database=power;"
     ports:
       - "20010:443"
     volumes:
       - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
 volumes:
-  identity:
+  power:

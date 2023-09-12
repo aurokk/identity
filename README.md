@@ -1,10 +1,10 @@
-# Identity
+# Power
 
 ## Build
 
 ```
-docker build -t identity .
-docker run -d --name identity -p20010:80 identity
+docker build -t power .
+docker run -d --name power -p20010:80 power
 docker compose up -d --build
 docker compose down -v
 ```
@@ -36,5 +36,5 @@ dotnet dev-certs https --clean
 ## Environment
 
 ```
-docker compose run --service-ports -d identity-db
+docker compose run --service-ports -d power-db
 ```

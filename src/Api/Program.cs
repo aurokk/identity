@@ -2,12 +2,16 @@ using System.Security.Claims;
 using Identity;
 using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
+
+services
+    .AddHealthChecks();
 
 services
     .AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -109,6 +113,18 @@ application
     .UseCors()
     .UseAuthentication()
     .UseAuthorization();
+
+application
+    .MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = healthCheck => healthCheck.Tags.Contains("ready"),
+    });
+
+application
+    .MapHealthChecks("/health/live", new HealthCheckOptions
+    {
+        Predicate = _ => false,
+    });
 
 application
     .MapControllers();

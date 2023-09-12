@@ -22,7 +22,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ${{ vars.DOCKERHUB_USERNAME }}/identity
+            ${{ vars.DOCKERHUB_USERNAME }}/power
           tags: |
             type=sha,prefix=,suffix=,format=long
       - name: Build and push to Docker Hub
