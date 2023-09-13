@@ -37,10 +37,9 @@ services
 services
     .AddHttpClient<ILoginCallbackApi, LoginCallbackApi>((httpClient, sp) =>
     {
-        var authUrl = sp
-            .GetRequiredService<IConfiguration>()
-            .GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
-        return new LoginCallbackApi(httpClient, authUrl);
+        var configuration = sp.GetRequiredService<IConfiguration>();
+        var authBaseUrl = configuration.GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
+        return new LoginCallbackApi(httpClient, authBaseUrl);
     });
 
 services
@@ -62,15 +61,18 @@ services
 
 services
     .AddCors(options =>
+    {
+        var configuration = builder.Configuration;
+        var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? throw new Exception();
         options
             .AddDefaultPolicy(policy =>
                 policy
-                    .WithOrigins("http://localhost:20020")
+                    .WithOrigins(origins)
                     .AllowCredentials()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-            )
-    );
+            );
+    });
 
 services
     .Configure<ForwardedHeadersOptions>(
