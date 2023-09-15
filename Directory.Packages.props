@@ -1,0 +1,23 @@
+<Project>
+    <PropertyGroup>
+        <CentralPackageVersionOverrideEnabled>false</CentralPackageVersionOverrideEnabled>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageVersion Include="IdentityModel" Version="6.2.0"/>
+        <PackageVersion Include="JetBrains.Annotations" Version="2023.2.0"/>
+        <PackageVersion Include="Kochnev.Auth.Private.Client" Version="1.0.0-alpha01"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="7.0.10"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.10"/>
+        <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="7.0.10"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.10">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageVersion>
+        <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.10"/>
+        <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.10"/>
+        <PackageVersion Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4"/>
+        <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
+    </ItemGroup>
+</Project>
