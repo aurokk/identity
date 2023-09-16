@@ -15,7 +15,7 @@ services:
     ports:
       - "20012:5432"
     volumes:
-      - power:/var/lib/postgresql/data
+      - power-db:/var/lib/postgresql/data
   power-migrator:
     build: .
     depends_on:
@@ -43,4 +43,4 @@ services:
     volumes:
       - /Users/dk/.aspnet/https/localhost.pfx:/https/localhost.pfx
 volumes:
-  power:
+  power-db:
