@@ -14,25 +14,29 @@ namespace Api.Controllers;
 
 [PublicAPI]
 public sealed record CallbackResponse(
-    string LoginResponseId);
+    string LoginResponseId
+);
 
 [PublicAPI]
 public sealed record LoginRequest(
     string Username,
     string Password,
-    string LoginRequestId);
+    string LoginRequestId
+);
 
 [PublicAPI]
 public sealed record RegisterRequest(
     string Username,
     string Password,
     string PasswordConfirmation,
-    string LoginRequestId);
+    string LoginRequestId
+);
 
 [PublicAPI]
 public sealed record LoginGoogleRequest(
     string ReturnUrl,
-    string LoginRequestId);
+    string LoginRequestId
+);
 
 [ApiController]
 [Route("account")]
