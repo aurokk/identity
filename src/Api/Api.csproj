@@ -1,4 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <UserSecretsId>449e3288-0b78-424b-a443-265020b47699</UserSecretsId>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="IdentityModel"/>
