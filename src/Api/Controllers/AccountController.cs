@@ -34,7 +34,6 @@ public sealed record RegisterRequest(
 
 [PublicAPI]
 public sealed record LoginGoogleRequest(
-    string ReturnUrl,
     string LoginRequestId
 );
 
@@ -45,15 +44,18 @@ public class AccountController : ControllerBase
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILoginCallbackApi _loginCallbackApi;
+    private readonly IConfiguration _configuration;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
-        ILoginCallbackApi loginCallbackApi)
+        ILoginCallbackApi loginCallbackApi,
+        IConfiguration configuration)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _loginCallbackApi = loginCallbackApi;
+        _configuration = configuration;
     }
 
     [HttpPost]
@@ -135,7 +137,6 @@ public class AccountController : ControllerBase
             {
                 { "LoginRequestId", request.LoginRequestId },
                 { "LoginProvider", "Google" }, // used to enable await _signInManager.GetExternalLoginInfoAsync()
-                { "ReturnUrl", request.ReturnUrl },
             },
         };
 
@@ -165,12 +166,34 @@ public class AccountController : ControllerBase
             externalUser.FindFirst(JwtClaimTypes.Subject) ??
             externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
             throw new Exception("Unknown userid");
+        
+        var provider = "Google";
+        var providerUserId = userIdClaim.Value;
+
+        var userByLogin = await _userManager.FindByLoginAsync("Google", userIdClaim.Value);
+        if (userByLogin != null)
+        {
+            var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(userByLogin);
+            var internalUserLocalSignInProps = new AuthenticationProperties();
+            await HttpContext.SignInAsync(
+                IdentityConstants.ApplicationScheme,
+                internalUserPrincipal,
+                internalUserLocalSignInProps
+            );
+
+            // delete external cookie
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            var loginRequestId = externalAuthResult.Properties.Items["LoginRequestId"];
+            var loginResponseId = await NotifySignInSuccess(loginRequestId, userByLogin.Id, ct);
+
+            var authBaseUrl = _configuration.GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
+            var returnUrl = $"{authBaseUrl}/connect/authorize/callback?loginResponseId={loginResponseId}";
+            return Redirect(returnUrl);
+        }
 
         var otherClaims = externalUser.Claims.ToList();
         otherClaims.Remove(userIdClaim);
 
-        var provider = "Google";
-        var providerUserId = userIdClaim.Value;
 
         // var internalUser = await _userManager.GetUserAsync(internalAuthResult.Principal);
         // if (internalUser == null)
@@ -200,21 +223,24 @@ public class AccountController : ControllerBase
             throw new Exception(addLoginResult.Errors.First().Description);
         }
 
-        var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(internalUser);
-        var internalUserLocalSignInProps = new AuthenticationProperties();
-        await HttpContext.SignInAsync(
-            IdentityConstants.ApplicationScheme,
-            internalUserPrincipal,
-            internalUserLocalSignInProps
-        );
+        {
+            var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(internalUser);
+            var internalUserLocalSignInProps = new AuthenticationProperties();
+            await HttpContext.SignInAsync(
+                IdentityConstants.ApplicationScheme,
+                internalUserPrincipal,
+                internalUserLocalSignInProps
+            );
 
-        // delete external cookie
-        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
-        var loginRequestId = externalAuthResult.Properties.Items["LoginRequestId"];
-        var loginResponseId = await NotifySignInSuccess(loginRequestId, internalUser.Id, ct);
+            // delete external cookie
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            var loginRequestId = externalAuthResult.Properties.Items["LoginRequestId"];
+            var loginResponseId = await NotifySignInSuccess(loginRequestId, internalUser.Id, ct);
 
-        var returnUrl = externalAuthResult.Properties.Items["ReturnUrl"] + $"&LoginResponseId={loginResponseId}";
-        return Redirect(returnUrl);
+            var authBaseUrl = _configuration.GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
+            var returnUrl = $"{authBaseUrl}/connect/authorize/callback?loginResponseId={loginResponseId}";
+            return Redirect(returnUrl);
+        }
     }
 
     [HttpPost]

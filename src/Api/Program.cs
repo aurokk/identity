@@ -21,18 +21,27 @@ services
         options.UseNpgsql(connectionString, b => b.MigrationsAssembly("Migrations"));
     });
 
-services
-    .AddAuthentication()
-    .AddGoogle(options =>
+var authBuilder = services
+    .AddAuthentication();
+
+{
+    var configuration = builder.Configuration;
+    var clientId = configuration.GetValue<string>("External:Google:ClientId");
+    var clientSecret = configuration.GetValue<string>("External:Google:ClientSecret");
+    if (!string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret))
     {
-        options.ClientId = "441030553740-a59juiaespkn97mm5dmhjgrmapa6m202.apps.googleusercontent.com";
-        options.ClientSecret = "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";
-        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
-        options.CorrelationCookie.SameSite = SameSiteMode.None;
-        options.CorrelationCookie.HttpOnly = true;
-        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-        // options.CallbackPath = "/signingoogle";
-    });
+        authBuilder
+            .AddGoogle(options =>
+            {
+                options.ClientId = clientId;
+                options.ClientSecret = clientSecret;
+                options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub", "string");
+                options.CorrelationCookie.SameSite = SameSiteMode.None;
+                options.CorrelationCookie.HttpOnly = true;
+                options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+            });
+    }
+}
 
 services
     .AddHttpClient<ILoginCallbackApi, LoginCallbackApi>((httpClient, sp) =>

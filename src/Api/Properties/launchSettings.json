@@ -8,10 +8,10 @@
       "applicationUrl": "https://localhost:20010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "MODE": "WEB",
         "Auth__BaseUrl": "https://localhost:20000",
+        "Cors__Origins__0": "http://localhost:20020",
         "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
-        "Cors__Origins__0": "http://localhost:20020"
+        "MODE": "WEB"
       }
     },
     "Migrator": {
@@ -21,9 +21,9 @@
       "applicationUrl": "https://localhost:20010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "MODE": "MIGRATOR",
         "Auth__BaseUrl": "https://localhost:20000",
-        "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;"
+        "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
+        "MODE": "MIGRATOR"
       }
     }
   }
