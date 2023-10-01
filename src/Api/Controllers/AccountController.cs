@@ -21,6 +21,7 @@ public sealed record CallbackResponse(
 public sealed record LoginRequest(
     string Username,
     string Password,
+    bool IsPersistent,
     string LoginRequestId
 );
 
@@ -79,6 +80,7 @@ public sealed record RegisterRequest(
     string Username,
     string Password,
     string PasswordConfirmation,
+    bool IsPersistent,
     string LoginRequestId
 );
 
@@ -145,7 +147,8 @@ public sealed class RegisterResponse
 
 [PublicAPI]
 public sealed record LoginGoogleRequest(
-    string LoginRequestId
+    string LoginRequestId,
+    bool IsPersistent
 );
 
 public static class EnumerableExtensions
@@ -199,7 +202,7 @@ public class AccountController : ControllerBase
 
         var user = new ApplicationUser
         {
-            Id = Random.Shared.Next(1, 100000).ToString(),
+            Id = Random.Shared.Next(1, 100000).ToString(), // todo: remove
             UserName = request.Username,
         };
         var createResult = await _userManager.CreateAsync(user, request.Password);
@@ -214,7 +217,7 @@ public class AccountController : ControllerBase
         var result = await _signInManager.PasswordSignInAsync(
             user: user,
             password: request.Password,
-            isPersistent: true,
+            isPersistent: request.IsPersistent,
             lockoutOnFailure: false
         );
         if (!result.Succeeded)
@@ -251,7 +254,7 @@ public class AccountController : ControllerBase
         var result = await _signInManager.PasswordSignInAsync(
             userName: request.Username,
             password: request.Password,
-            isPersistent: true,
+            isPersistent: request.IsPersistent,
             lockoutOnFailure: false
         );
 
@@ -293,6 +296,7 @@ public class AccountController : ControllerBase
             {
                 { "LoginRequestId", request.LoginRequestId },
                 { "LoginProvider", "Google" }, // used to enable await _signInManager.GetExternalLoginInfoAsync()
+                { "IsPersistent", request.IsPersistent ? "1" : "0" },
             },
         };
 
@@ -315,6 +319,8 @@ public class AccountController : ControllerBase
         {
             throw new Exception("LoginRequestId is null");
         }
+
+        var isPersistent = externalAuthResult.Properties.Items["IsPersistent"] == "1";
 
         var denjiBaseUrl = _configuration.GetValue<string>("Denji:BaseUrl");
         if (denjiBaseUrl == null)
@@ -341,15 +347,19 @@ public class AccountController : ControllerBase
         var userByLogin = await _userManager.FindByLoginAsync("Google", userIdClaim.Value);
         if (userByLogin != null)
         {
-            var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(userByLogin);
-            var internalUserLocalSignInProps = new AuthenticationProperties();
-            await HttpContext.SignInAsync(
-                IdentityConstants.ApplicationScheme,
-                internalUserPrincipal,
-                internalUserLocalSignInProps
+            // var internalUserPrincipal = await _signInManager.CreateUserPrincipalAsync(userByLogin);
+            // var internalUserLocalSignInProps = new AuthenticationProperties();
+            // await HttpContext.SignInAsync(
+            //     IdentityConstants.ApplicationScheme,
+            //     internalUserPrincipal,
+            //     internalUserLocalSignInProps
+            // );
+
+            await _signInManager.SignInAsync(
+                user: userByLogin,
+                isPersistent: isPersistent
             );
 
-            // delete external cookie
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             var loginResponseId = await NotifySignInSuccess(loginRequestId, userByLogin.Id, ct);
 
