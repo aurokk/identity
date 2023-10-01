@@ -23,7 +23,6 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
-        "Denji__BaseUrl": "https://localhost:20000",
         "MODE": "MIGRATOR"
       }
     }
