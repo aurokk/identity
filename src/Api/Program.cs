@@ -47,7 +47,7 @@ services
     .AddHttpClient<ILoginCallbackApi, LoginCallbackApi>((httpClient, sp) =>
     {
         var configuration = sp.GetRequiredService<IConfiguration>();
-        var authBaseUrl = configuration.GetValue<string>("Auth:BaseUrl") ?? throw new ApplicationException();
+        var authBaseUrl = configuration.GetValue<string>("Denji:BaseUrl") ?? throw new ApplicationException();
         return new LoginCallbackApi(httpClient, authBaseUrl);
     });
 

@@ -8,9 +8,10 @@
       "applicationUrl": "https://localhost:20010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "Auth__BaseUrl": "https://localhost:20000",
+        "Cosmo__BaseUrl": "http://localhost:20020",
         "Cors__Origins__0": "http://localhost:20020",
         "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
+        "Denji__BaseUrl": "https://localhost:20000",
         "MODE": "WEB"
       }
     },
@@ -21,8 +22,8 @@
       "applicationUrl": "https://localhost:20010",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "Auth__BaseUrl": "https://localhost:20000",
         "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
+        "Denji__BaseUrl": "https://localhost:20000",
         "MODE": "MIGRATOR"
       }
     }
