@@ -222,7 +222,6 @@ public class AccountController : ControllerBase
         );
         if (!result.Succeeded)
         {
-            await NotifySignInFailure(request.LoginRequestId, ct);
             var response = RegisterResponse.Failure(
                 errors: new[] { RegisterResponse.ErrorCodeDto.UnknownError }
             );
@@ -260,7 +259,6 @@ public class AccountController : ControllerBase
 
         if (!result.Succeeded)
         {
-            await NotifySignInFailure(request.LoginRequestId, ct);
             var errorCode = result switch
             {
                 // @formatter:off
@@ -433,22 +431,6 @@ public class AccountController : ControllerBase
         return response.StatusCode == HttpStatusCode.OK
             ? response.Data.LoginResponseId
             : throw new Exception();
-    }
-
-    private async Task NotifySignInFailure(string loginRequestId, CancellationToken ct)
-    {
-        var request = new ApiApiPrivateLoginCallbackRejectRequest
-        {
-            LoginRequestId = loginRequestId,
-        };
-        var response = await _loginCallbackApi.ApiPrivateLoginCallbackRejectPostWithHttpInfoAsync(
-            apiApiPrivateLoginCallbackRejectRequest: request,
-            cancellationToken: ct
-        );
-        if (response.StatusCode != HttpStatusCode.OK)
-        {
-            throw new Exception();
-        }
     }
 
     private static RegisterResponse.ErrorCodeDto ToDto(IdentityError identityError)
