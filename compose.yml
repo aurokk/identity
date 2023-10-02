@@ -35,9 +35,10 @@ services:
       ASPNETCORE_Kestrel__Certificates__Default__Path: /https/localhost.pfx
       ASPNETCORE_Kestrel__Certificates__Default__Password: localhost
       ASPNETCORE_URLS: "https://+"
-      MODE: WEB
-      Auth__BaseUrl: "http://auth:80"
       Database__ConnectionString: "Host=power-db;Port=5432;Username=power;Password=power;Database=power;"
+      Denji__BaseUrl: "http://denji:80"
+      MODE: WEB
+      Cosmo__BaseUrl: "http://localhost:20020"
     ports:
       - "20010:443"
     volumes:
