@@ -13,6 +13,8 @@ RUN dotnet restore
 COPY src/Api/.        ./src/Api/
 COPY src/Identity/.   ./src/Identity/
 COPY src/Migrations/. ./src/Migrations/
+RUN dotnet test --no-restore
+
 WORKDIR /source/src/Api
 RUN dotnet publish -c release -o /dist --no-restore
 
