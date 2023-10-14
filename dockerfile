@@ -8,7 +8,7 @@ COPY global.json                  .
 COPY src/Api/*.csproj             ./src/Api/
 COPY src/Identity/*.csproj        ./src/Identity/
 COPY src/Migrations/*.csproj      ./src/Migrations/
-COPY tests/Api.UnitTests/*.csproj ./tests/Api/
+COPY tests/Api.UnitTests/*.csproj ./tests/Api.UnitTests/
 RUN dotnet restore
 
 COPY src/Api/.             ./src/Api/
