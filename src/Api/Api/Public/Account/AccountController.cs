@@ -198,9 +198,11 @@ public class ApplicationUserFactory : IApplicationUserFactory
 
     private ApplicationUser CreateInternal(string? email = null)
     {
+        var id = _idFactory.Create();
         return new ApplicationUser
         {
-            Id = _idFactory.Create(),
+            Id = id,
+            UserName = id,
             Email = email,
         };
     }
@@ -272,7 +274,8 @@ public class AccountController : ControllerBase
 
         {
             var loginResponseId = await NotifySignInSuccess(request.LoginRequestId, user.Id, ct);
-            return Ok(new { LoginResponseId = loginResponseId, });
+            var response = RegisterResponse.Success(loginResponseId);
+            return Ok(response);
         }
     }
 

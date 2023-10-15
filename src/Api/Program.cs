@@ -94,6 +94,7 @@ services
         options.Password.RequireLowercase = false;
         options.Password.RequireUppercase = false;
         options.Password.RequiredUniqueChars = 1;
+        options.User.RequireUniqueEmail = true;
     })
     .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
