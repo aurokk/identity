@@ -206,6 +206,7 @@ public class ApplicationUserFactory : IApplicationUserFactory
     }
 }
 
+[ApiExplorerSettings(GroupName = SwaggerPublicExtensions.Name)]
 [ApiController]
 [Route("api/public/account")]
 public class AccountController : ControllerBase
