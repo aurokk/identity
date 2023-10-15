@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Controllers;
+namespace Api.Api.Public.Account;
 
 [PublicAPI]
 public sealed record CallbackResponse(
@@ -19,7 +19,7 @@ public sealed record CallbackResponse(
 
 [PublicAPI]
 public sealed record LoginRequest(
-    string Username,
+    string Email,
     string Password,
     bool IsPersistent,
     string LoginRequestId
@@ -77,7 +77,7 @@ public sealed class LoginResponse
 
 [PublicAPI]
 public sealed record RegisterRequest(
-    string Username,
+    string Email,
     string Password,
     string PasswordConfirmation,
     bool IsPersistent,
@@ -164,25 +164,73 @@ public static class EnumerableExtensions
         select item.Value;
 }
 
+public interface IApplicationUserIdFactory
+{
+    string Create();
+}
+
+public class ApplicationUserIdFactory : IApplicationUserIdFactory
+{
+    public string Create()
+    {
+        return Guid.NewGuid().ToString("N");
+    }
+}
+
+public interface IApplicationUserFactory
+{
+    ApplicationUser CreateForExternalProvider();
+    ApplicationUser Create(string email);
+}
+
+public class ApplicationUserFactory : IApplicationUserFactory
+{
+    private readonly IApplicationUserIdFactory _idFactory;
+
+    public ApplicationUserFactory(IApplicationUserIdFactory idFactory) =>
+        _idFactory = idFactory;
+
+    public ApplicationUser CreateForExternalProvider() =>
+        CreateInternal();
+
+    public ApplicationUser Create(string email) =>
+        CreateInternal(email: email);
+
+    private ApplicationUser CreateInternal(string? email = null)
+    {
+        var id = _idFactory.Create();
+        return new ApplicationUser
+        {
+            Id = id,
+            UserName = id,
+            Email = email,
+        };
+    }
+}
+
+[ApiExplorerSettings(GroupName = SwaggerPublicExtensions.Name)]
 [ApiController]
-[Route("account")]
+[Route("api/public/account")]
 public class AccountController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILoginCallbackApi _loginCallbackApi;
     private readonly IConfiguration _configuration;
+    private readonly IApplicationUserFactory _userFactory;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         ILoginCallbackApi loginCallbackApi,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IApplicationUserFactory userFactory)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _loginCallbackApi = loginCallbackApi;
         _configuration = configuration;
+        _userFactory = userFactory;
     }
 
     [ProducesResponseType(typeof(RegisterResponse), 200)]
@@ -200,11 +248,7 @@ public class AccountController : ControllerBase
             return BadRequest(response);
         }
 
-        var user = new ApplicationUser
-        {
-            Id = Random.Shared.Next(1, 100000).ToString(), // todo: remove
-            UserName = request.Username,
-        };
+        var user = _userFactory.Create(request.Email);
         var createResult = await _userManager.CreateAsync(user, request.Password);
         if (!createResult.Succeeded)
         {
@@ -230,7 +274,8 @@ public class AccountController : ControllerBase
 
         {
             var loginResponseId = await NotifySignInSuccess(request.LoginRequestId, user.Id, ct);
-            return Ok(new { LoginResponseId = loginResponseId, });
+            var response = RegisterResponse.Success(loginResponseId);
+            return Ok(response);
         }
     }
 
@@ -241,7 +286,7 @@ public class AccountController : ControllerBase
     [Route("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
     {
-        var user = await _userManager.FindByNameAsync(request.Username);
+        var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null)
         {
             var response = LoginResponse.Failure(
@@ -251,7 +296,7 @@ public class AccountController : ControllerBase
         }
 
         var result = await _signInManager.PasswordSignInAsync(
-            userName: request.Username,
+            user: user,
             password: request.Password,
             isPersistent: request.IsPersistent,
             lockoutOnFailure: false
@@ -365,7 +410,7 @@ public class AccountController : ControllerBase
             return Redirect(returnUrl);
         }
 
-        var internalUser = new ApplicationUser { UserName = Guid.NewGuid().ToString(), };
+        var internalUser = _userFactory.CreateForExternalProvider();
         var internalUserResult = await _userManager.CreateAsync(internalUser);
         if (!internalUserResult.Succeeded)
         {
