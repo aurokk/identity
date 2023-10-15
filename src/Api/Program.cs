@@ -164,10 +164,5 @@ application
             await application.RunAsync();
             return;
         }
-
-        default:
-        {
-            throw new Exception($"Unknown MODE {mode}");
-        }
     }
 }
