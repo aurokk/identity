@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Api.Controllers;
 using Identity;
 using Kochnev.Auth.Private.Client.Api;
 using Microsoft.AspNetCore.Authentication;
@@ -110,6 +111,10 @@ services
 services
     .AddEndpointsApiExplorer()
     .AddSwaggerGen();
+
+services
+    .AddScoped<IApplicationUserIdFactory, ApplicationUserIdFactory>()
+    .AddScoped<IApplicationUserFactory, ApplicationUserFactory>();
 
 var application = builder.Build();
 
