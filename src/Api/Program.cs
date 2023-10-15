@@ -102,7 +102,7 @@ services
 services
     .AddCors(options =>
     {
-        var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? throw new Exception();
+        var origins = configuration.GetSection("Cors:Origins").Get<string[]>() ?? Array.Empty<string>();
         options
             .AddDefaultPolicy(policy =>
                 policy
