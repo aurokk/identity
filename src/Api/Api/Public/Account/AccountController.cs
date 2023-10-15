@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Controllers;
+namespace Api.Api.Public.Account;
 
 [PublicAPI]
 public sealed record CallbackResponse(
@@ -207,7 +207,7 @@ public class ApplicationUserFactory : IApplicationUserFactory
 }
 
 [ApiController]
-[Route("account")]
+[Route("api/public/account")]
 public class AccountController : ControllerBase
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
