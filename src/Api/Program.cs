@@ -78,7 +78,7 @@ var authBuilder = services
 services
     .AddHttpClient<ILoginCallbackApi, LoginCallbackApi>((httpClient, _) =>
     {
-        var authBaseUrl = configuration.GetValue<string>("Denji:BaseUrl") ?? throw new ApplicationException();
+        var authBaseUrl = configuration.GetValue<string>("Denji:PrivateApi:BaseUrl") ?? throw new ApplicationException();
         return new LoginCallbackApi(httpClient, authBaseUrl);
     });
 

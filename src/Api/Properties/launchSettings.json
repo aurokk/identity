@@ -10,7 +10,7 @@
         "Cosmo__BaseUrl": "http://localhost:20020",
         "Cors__Origins__0": "http://localhost:20020",
         "Database__ConnectionString": "Host=localhost;Port=20012;Username=power;Password=power;Database=power;",
-        "Denji__BaseUrl": "https://localhost:20001",
+        "Denji__PrivateApi__BaseUrl": "https://localhost:20001",
         "MODE": "WEB",
         "PrivateApi__HttpsPort": "20011",
         "PublicApi__HttpsPort": "20010"
